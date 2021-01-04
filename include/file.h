@@ -7,11 +7,13 @@
 class File{
 private:
     int fd;
+    std::string filename;
     HeaderPage* header;
 public:
-    File(std::string filename, int index = BPLUSTREE);
+    File(std::string filename, int index);
     ~File();
-    
+    std::string get_filename();
+
     void write_page(pagenum_t page_no, basic_page* page);
     void read_page(pagenum_t page_no, basic_page* page);
     pagenum_t alloc_page();
@@ -19,6 +21,7 @@ public:
 
     void write_header();
     void read_header();
+    HeaderPage* get_header();
 };
 
 class Page : public basic_page{
