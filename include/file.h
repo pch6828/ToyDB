@@ -31,5 +31,6 @@ public:
     virtual bool insert(int64_t key, char* value){};
     virtual bool erase(int64_t key){};
     virtual char* find(int64_t key){};
+    virtual void print(){};
 };
 #endif

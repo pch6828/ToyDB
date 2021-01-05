@@ -52,4 +52,5 @@ public:
     pagenum_t alloc_page(int table_id);
 };
 
+extern Buffer* buffer;
 #endif

@@ -40,9 +40,10 @@ public:
     void set_parent(pagenum_t parent);
     pagenum_t get_parent();
     void clean_page();
-    virtual bool insert(int64_t key, char* value) = 0;
-    virtual bool erase(int64_t key) = 0;
-    virtual char* find(int64_t key) = 0;
+    virtual bool insert(int table_id, int64_t key, char* value) = 0;
+    virtual bool erase(int table_id, int64_t key) = 0;
+    virtual char* find(int table_id, int64_t key) = 0;
+    virtual void print() = 0;
 };
 
 class HeaderPage{
