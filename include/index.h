@@ -32,8 +32,8 @@ private:
     void add_branch(pagenum_t now, Branch& branch);
     void insert_branch(int table_id, pagenum_t now, Branch& branch);
     void split_leaf(int table_id, Record& record);
-    void split_internal(int table_id, pagenum_t now, Branch& branch);
-    void init_root(int table_id, pagenum_t left, pagenum_t leftmost, Branch& branch);
+    void split_internal(int table_id, pagenum_t left_no, Branch& branch);
+    void init_root(int table_id, pagenum_t now, pagenum_t leftmost, Branch& branch);
     int find_idx(pagenum_t page_no);
 public:
     virtual bool insert(int table_id, int64_t key, char* value);

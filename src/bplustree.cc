@@ -163,7 +163,7 @@ void bplustree::add_branch(pagenum_t now, Branch& branch){
     buffer->pin_page(table_id, page_no);
     bplustree* page = dynamic_cast<bplustree*>(buffer->get_page(table_id, page_no));
     page->parent_no = now;
-    buffer->unpin_page(table_id, child_no);
+    buffer->unpin_page(table_id, page_no);
 }
 
 int bplustree::find_idx(pagenum_t page_no){
@@ -201,14 +201,30 @@ void bplustree::split_internal(int table_id, pagenum_t left_no, Branch& branch){
         }
         idx++;
     }
+    pagenum_t page_no;
     for(int i = 0; i < left_cnt; i++){
         left->child[i] = temp[i];
+        page_no = temp[i].get_page_no();
+        buffer->pin_page(table_id, page_no);
+        bplustree* page = dynamic_cast<bplustree*>(buffer->get_page(table_id, page_no));
+        page->parent_no = left_no;
+        buffer->unpin_page(table_id, page_no);
     }
     left->num_keys = left_cnt;
     right->leftmost_child = temp[left_cnt].get_page_no();
+    page_no = temp[left_cnt].get_page_no();
+    buffer->pin_page(table_id, page_no);
+    bplustree* page = dynamic_cast<bplustree*>(buffer->get_page(table_id, page_no));
+    page->parent_no = right_no;
+    buffer->unpin_page(table_id, page_no);
     key = temp[left_cnt].get_key();
     for(int i = left_cnt+1; i < MAX_BRANCH+1; i++){
         right->child[i-left_cnt-1] = temp[i];
+        page_no = temp[i].get_page_no();
+        buffer->pin_page(table_id, page_no);
+        bplustree* page = dynamic_cast<bplustree*>(buffer->get_page(table_id, page_no));
+        page->parent_no = right_no;
+        buffer->unpin_page(table_id, page_no);
     }
     right->num_keys = right_cnt;
 
