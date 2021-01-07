@@ -4,6 +4,8 @@
 #include "buffer.h"
 #include "index.h"
 
+Buffer* buffer = nullptr;
+
 Frame::Frame(){
     this->page = nullptr;
     this->is_dirty = 0;
@@ -45,6 +47,7 @@ void Buffer::pin_page(int table_id, pagenum_t page_no){
         Frame& frame = this->frames[this->now_idx];
         if(frame.in_use == 0){
             File* file = table->get_file(table_id);
+            frame.page = allocate_page(file->get_header()->get_type());
             file->read_page(page_no, frame.page);
             frame.in_use = 1;
             frame.is_dirty = 0;
@@ -95,6 +98,11 @@ basic_page* Buffer::get_page(int table_id, pagenum_t page_no){
     return this->frames[location].page;
 }
 
+void Buffer::mark_dirty(int table_id, pagenum_t page_no){
+    int location = this->hashtable[{table_id, page_no}];    
+    this->frames[location].is_dirty = 1;
+}
+
 void Buffer::free_page(int table_id, pagenum_t page_no){
     int location = this->hashtable[{table_id, page_no}];    
     File* file = table->get_file(table_id);
@@ -105,4 +113,17 @@ void Buffer::free_page(int table_id, pagenum_t page_no){
 pagenum_t Buffer::alloc_page(int table_id){
     File* file = table->get_file(table_id);
     return file->alloc_page();
+}
+
+void Buffer::flush_table(int table_id){
+    File* file = table->get_file(table_id);
+    for(int i = 0; i < this->size; i++){
+        Frame& frame = this->frames[i];
+        if(frame.in_use&&frame.is_dirty&&frame.table_id==table_id){
+            file->write_page(frame.page_no, frame.page);
+            frame.in_use = 0;
+            delete frame.page;
+            frame.page = nullptr;
+        }
+    }
 }

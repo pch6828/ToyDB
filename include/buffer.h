@@ -48,8 +48,10 @@ public:
     void pin_page(int table_id, pagenum_t page_no);
     void unpin_page(int table_id, pagenum_t page_no);
     basic_page* get_page(int table_id, pagenum_t page_no);
+    void mark_dirty(int table_id, pagenum_t page_no);
     void free_page(int table_id, pagenum_t page_no);
     pagenum_t alloc_page(int table_id);
+    void flush_table(int table_id);
 };
 
 extern Buffer* buffer;

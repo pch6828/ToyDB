@@ -11,7 +11,8 @@ private:
     std::unordered_map<std::string, int>idx;
     int cnt;
 public:
-    int open(std::string filename, int index = BPLUSTREE);
+    ~Table();
+    int open(std::string filename, int index);
     void close(int table_id);
     File* get_file(int table_id);
 };

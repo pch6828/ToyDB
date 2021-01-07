@@ -28,9 +28,9 @@ class Page : public basic_page{
 private:
     char reserved[3976];
 public:
-    virtual bool insert(int64_t key, char* value){};
-    virtual bool erase(int64_t key){};
-    virtual char* find(int64_t key){};
-    virtual void print(){};
+    virtual bool insert(int table_id, int64_t key, char* value){return true;}
+    virtual bool erase(int table_id, int64_t key){return true;}
+    virtual char* find(int table_id, int64_t key){return nullptr;}
+    virtual void print(int table_id){return;}
 };
 #endif

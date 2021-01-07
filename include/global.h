@@ -32,18 +32,16 @@ protected:
     pagenum_t parent_no;
     int flag;
     int num_keys;
-    char reserved[92];
+    char reserved[104];
     //4 byte for vptr
 public:
-    basic_page();
-    ~basic_page();
     void set_parent(pagenum_t parent);
     pagenum_t get_parent();
     void clean_page();
-    virtual bool insert(int table_id, int64_t key, char* value) = 0;
-    virtual bool erase(int table_id, int64_t key) = 0;
-    virtual char* find(int table_id, int64_t key) = 0;
-    virtual void print() = 0;
+    bool insert(int table_id, int64_t key, char* value);
+    bool erase(int table_id, int64_t key);
+    char* find(int table_id, int64_t key);
+    void print(int table_id);
 };
 
 class HeaderPage{

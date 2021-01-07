@@ -7,11 +7,11 @@
 #include "file.h"
 
 File::File(std::string filename, int index){
-    this->fd = open(filename.c_str(), O_RDWR|O_SYNC|O_CREAT,0777);
+    this->filename = filename;
+    this->fd = open(this->filename.c_str(), O_RDWR|O_SYNC|O_CREAT, 0777);
     if(this->fd < 0){
         std::cerr << "File Open Error!" << std::endl;
     }
-
     this->header = new HeaderPage();
     this->read_header();
 
