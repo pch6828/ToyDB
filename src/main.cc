@@ -34,6 +34,11 @@ int main(){
             int64_t key;
             std::cin>>table_id>>key;
             std::cout<<"search result : "<<find(table_id, key)<<std::endl;
+        }else if(cmd=="delete"){
+            int table_id;
+            int64_t key;
+            std::cin>>table_id>>key;
+            std::cout<<"delete result : "<<erase(table_id, key)<<std::endl;
         }else if(cmd=="print"){
             int table_id;
             std::cin>>table_id;

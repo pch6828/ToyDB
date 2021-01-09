@@ -8,9 +8,11 @@
 #include "buffer.h"
 #include "index.h"
 
+//#define MAX_BRANCH 248
+//#define MAX_RECORD 31
+//for debug
 #define MAX_BRANCH 4
 #define MAX_RECORD 4
-
 
 bplustree::bplustree(){
     this->flag = 1;
@@ -182,17 +184,6 @@ void bplustree::add_branch(int table_id, pagenum_t now, Branch& branch){
     buffer->unpin_page(table_id, page_no);
 }
 
-int bplustree::find_idx(pagenum_t page_no){
-    if(leftmost_child == page_no){
-        return -1;
-    }
-    for(int i = 0; i < num_keys; i++){
-        if(child[i].get_key() == page_no){
-            return i;
-        }
-    }
-}
-
 void bplustree::split_internal(int table_id, pagenum_t left_no, Branch& branch){
     Branch temp[MAX_BRANCH+1];
     int idx = 0, i = 0;
@@ -284,7 +275,9 @@ bool bplustree::insert(int table_id, int64_t key, char* value){
     Record record(key, value);
     pagenum_t now = table->get_file(table_id)->get_header()->get_root_page();
     pagenum_t target_no = this->find_leaf(table_id, key, now);
-    if(find(table_id, key)!=nullptr){
+    char* temp;
+    if((temp = find(table_id, key))!=nullptr){
+        delete temp;
         return false;
     }
     buffer->pin_page(table_id, target_no);
@@ -299,6 +292,258 @@ bool bplustree::insert(int table_id, int64_t key, char* value){
     return true;
 }
 
+//B+Tree API #3
+//DELETE
+
+int bplustree::find_idx(pagenum_t page_no){
+    if(leftmost_child == page_no){
+        return -1;
+    }
+    for(int i = 0; i < num_keys; i++){
+        if(child[i].get_page_no() == page_no){
+            return i;
+        }
+    }
+}
+
+void bplustree::remove_record(int64_t key){
+    bool found = false;
+    for(int i = 0; i < this->num_keys; i++){
+        if(found){
+            records[i-1] = records[i];
+        }
+        if(records[i].get_key() == key){
+            found = true;
+        }
+    }  
+    this->num_keys--;
+}
+
+void bplustree::remove_branch(int table_id, int64_t key){
+    bool found = false;
+    pagenum_t target_no;
+    for(int i = 0; i < this->num_keys; i++){
+        if(found){
+            child[i-1] = child[i];
+        }
+        if(child[i].get_key() == key){
+            found = true;
+            target_no = child[i].get_page_no();
+        }
+    }
+    this->num_keys--;
+    buffer->pin_page(table_id, target_no);
+    buffer->free_page(table_id, target_no);
+    buffer->mark_dirty(table_id, target_no);
+    buffer->unpin_page(table_id, target_no);
+}
+
+void bplustree::adjust_root(int table_id, pagenum_t now){
+    if(num_keys>0){
+        return;
+    }
+    pagenum_t root_no = 0;
+    if(!flag){
+        root_no = this->leftmost_child;
+        buffer->pin_page(table_id, root_no);
+        bplustree* root = (bplustree*)(buffer->get_page(table_id, root_no));
+        root->parent_no = 0;
+        buffer->mark_dirty(table_id, root_no);
+        buffer->unpin_page(table_id, root_no);
+    }
+    table->get_file(table_id)->get_header()->set_root_page(root_no);
+    buffer->free_page(table_id, now);
+}
+
+void bplustree::redistribute_node(int table_id, pagenum_t left_no, pagenum_t right_no, int idx){
+    buffer->pin_page(table_id, left_no);
+    buffer->pin_page(table_id, right_no);
+    bplustree* parent = this;
+    bplustree* left = (bplustree*)(buffer->get_page(table_id, left_no));
+    bplustree* right = (bplustree*)(buffer->get_page(table_id, right_no));
+
+    if(left->flag){
+        if(idx==-1){
+            left->records[0] = right->records[0];
+            left->num_keys++;
+            right->remove_record(right->records[0].get_key());
+            parent->child[0].set_key(right->records[0].get_key());
+        }else{
+            right->records[0] = left->records[left->num_keys-1];
+            right->num_keys++;
+            left->remove_record(left->records[left->num_keys-1].get_key());
+            parent->child[idx].set_key(right->records[0].get_key());
+        }
+    }else{
+        if(idx==-1){
+            Branch branch;
+            branch.set_key(parent->child[0].get_key());
+            branch.set_page_no(right->leftmost_child);
+            left->child[0] = branch;
+            left->num_keys++;
+            pagenum_t child_no = branch.get_page_no();
+            buffer->pin_page(table_id, child_no);
+            bplustree* child = (bplustree*)(buffer->get_page(table_id, child_no));
+            child->parent_no = left_no;
+            buffer->mark_dirty(table_id, child_no);
+            buffer->unpin_page(table_id, child_no);
+            right->leftmost_child = right->child[0].get_page_no();
+            parent->child[0].set_key(right->child[0].get_key());
+            for(int i = 1; i < right->num_keys; i++){
+                right->child[i-1] = right->child[i];
+            }
+            right->num_keys--;
+        }else{
+            Branch branch;
+            branch.set_key(parent->child[idx].get_key());
+            branch.set_page_no(right->leftmost_child);
+            right->child[0] = branch;
+            right->num_keys++;
+            right->leftmost_child = left->child[left->num_keys-1].get_page_no();
+            pagenum_t child_no = right->leftmost_child;
+            buffer->pin_page(table_id, child_no);
+            bplustree* child = (bplustree*)(buffer->get_page(table_id, child_no));
+            child->parent_no = right_no;
+            buffer->mark_dirty(table_id, child_no);
+            buffer->unpin_page(table_id, child_no);
+            parent->child[idx].set_key(left->child[left->num_keys-1].get_key());
+            left->num_keys--;
+        }
+    }
+    buffer->mark_dirty(table_id, left_no);
+    buffer->mark_dirty(table_id, right_no);
+    buffer->unpin_page(table_id, right_no);
+    buffer->unpin_page(table_id, left_no);
+}
+
+void bplustree::merge_node(int table_id, pagenum_t parent_no, pagenum_t left_no, pagenum_t right_no, int idx){
+    int64_t key;
+    buffer->pin_page(table_id, left_no);
+    buffer->pin_page(table_id, right_no);
+    bplustree* parent = this;
+    bplustree* left = (bplustree*)(buffer->get_page(table_id, left_no));
+    bplustree* right = (bplustree*)(buffer->get_page(table_id, right_no));
+
+    if(left->flag){
+        if(idx==-1){
+            left->records[0] = right->records[0];
+            left->right_sibling = right->right_sibling;
+            left->num_keys++;
+            key = parent->child[0].get_key();
+        }else{
+            left->right_sibling = right->right_sibling;
+            key = parent->child[idx].get_key();
+        }
+    }else{
+        if(idx==-1){
+            Branch branch;
+            branch.set_key(parent->child[0].get_key());
+            branch.set_page_no(right->leftmost_child);
+            left->child[0] = branch;
+            left->child[1] = right->child[0];
+            pagenum_t child_no;
+            bplustree* child;
+            child_no = right->leftmost_child;
+            buffer->pin_page(table_id, child_no);
+            child = (bplustree*)(buffer->get_page(table_id, child_no));
+            child->parent_no = left_no;
+            buffer->mark_dirty(table_id, child_no);
+            buffer->unpin_page(table_id, child_no);
+            child_no = right->child[0].get_page_no();
+            buffer->pin_page(table_id, child_no);
+            child = (bplustree*)(buffer->get_page(table_id, child_no));
+            child->parent_no = left_no;
+            buffer->mark_dirty(table_id, child_no);
+            buffer->unpin_page(table_id, child_no);
+            left->num_keys+=2;
+            key = parent->child[0].get_key();
+        }else{
+            Branch branch;
+            branch.set_key(parent->child[0].get_key());
+            branch.set_page_no(right->leftmost_child);
+            left->child[1] = branch;
+            pagenum_t child_no;
+            bplustree* child;
+            child_no = right->leftmost_child;
+            buffer->pin_page(table_id, child_no);
+            child = (bplustree*)(buffer->get_page(table_id, child_no));
+            child->parent_no = left_no;
+            buffer->mark_dirty(table_id, child_no);
+            buffer->unpin_page(table_id, child_no);
+            left->num_keys++;
+            key = parent->child[0].get_key();
+        }
+    }
+
+    erase_entry(table_id, parent_no, key);
+    buffer->mark_dirty(table_id, left_no);
+    buffer->mark_dirty(table_id, right_no);
+    buffer->unpin_page(table_id, right_no);
+    buffer->unpin_page(table_id, left_no);
+}
+
+void bplustree::erase_entry(int table_id, pagenum_t now, int64_t key){
+    if(flag){
+        this->remove_record(key);
+    }else{
+        this->remove_branch(table_id, key);
+    }
+    if(this->parent_no==0){
+        this->adjust_root(table_id, now);
+        return;
+    }
+    if(num_keys > 0){
+        return;
+    }
+    pagenum_t parent_no = this->parent_no, neighbor_no, left_no, right_no;
+    buffer->pin_page(table_id, parent_no);
+    bplustree* parent = (bplustree*)(buffer->get_page(table_id, parent_no));
+    int idx = parent->find_idx(now);
+    if(idx==-1){    
+        neighbor_no = parent->child[0].get_page_no();
+        left_no = now;
+        right_no = neighbor_no;
+    }else if(idx==0){
+        neighbor_no = parent->leftmost_child;
+        left_no = neighbor_no;
+        right_no = now;
+    }else{
+        neighbor_no = parent->child[idx-1].get_page_no();
+        left_no = neighbor_no;
+        right_no = now;
+    }
+    buffer->pin_page(table_id, neighbor_no);
+    bplustree* neighbor = (bplustree*)(buffer->get_page(table_id, neighbor_no));
+    
+    if(neighbor->num_keys>1){
+        parent->redistribute_node(table_id, left_no, right_no, idx);
+    }else{
+        parent->merge_node(table_id, parent_no, left_no, right_no, idx);
+    }
+    buffer->mark_dirty(table_id, neighbor_no);
+    buffer->mark_dirty(table_id, parent_no);
+    buffer->unpin_page(table_id, neighbor_no);
+    buffer->unpin_page(table_id, parent_no);
+}
+
+bool bplustree::erase(int table_id, int64_t key){
+    pagenum_t now = table->get_file(table_id)->get_header()->get_root_page();
+    pagenum_t target_no = this->find_leaf(table_id, key, now);
+    char* temp;
+    if((temp = find(table_id, key))==nullptr){
+        return false;
+    }
+    delete temp;
+    buffer->pin_page(table_id, target_no);
+    bplustree* target = (bplustree*)(buffer->get_page(table_id, target_no));
+    target->erase_entry(table_id, target_no, key);
+    buffer->mark_dirty(table_id, target_no);
+    buffer->unpin_page(table_id, target_no);
+    return true;
+}
+
+//B+Tree API #4
+//PRINT
 int bplustree::height(int table_id){
     int result = 0;
     if(this->parent_no==0){

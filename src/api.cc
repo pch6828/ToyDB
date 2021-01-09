@@ -76,6 +76,24 @@ char* find(int table_id, int64_t key){
     return result;
 }
 
+bool erase(int table_id, int64_t key){    
+    bool result;
+    File* file = table->get_file(table_id);
+    if(!file){
+        return false;
+    }
+    pagenum_t root_no;
+    if((root_no = file->get_header()->get_root_page())==0){
+        file->get_header()->set_root_page(root_no = file->alloc_page());
+    }
+
+    buffer->pin_page(table_id, root_no);
+    bplustree* root = (bplustree*)(buffer->get_page(table_id, root_no));
+    result = root->erase(table_id, key);
+    buffer->unpin_page(table_id, root_no);
+    return result; 
+}
+
 void print(int table_id){
     File* file = table->get_file(table_id);
     if(!file){

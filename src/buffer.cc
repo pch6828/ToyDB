@@ -56,7 +56,7 @@ void Buffer::pin_page(int table_id, pagenum_t page_no){
             frame.table_id = table_id;
             this->hashtable[{table_id, page_no}] = now_idx;
             return;
-        }else if(frame.is_pinned == 0){
+        }else if(frame.is_pinned == 0 && frame.ref == 0){
             File* file;
             if(frame.is_dirty){
                 file = table->get_file(frame.table_id);
@@ -73,6 +73,8 @@ void Buffer::pin_page(int table_id, pagenum_t page_no){
             frame.table_id = table_id;
             this->hashtable[{table_id, page_no}] = now_idx;
             return;
+        }else if(frame.is_pinned == 0){
+            frame.ref--;
         }
     }
 }
@@ -94,7 +96,8 @@ void Buffer::unpin_page(int table_id, pagenum_t page_no){
 }
 
 basic_page* Buffer::get_page(int table_id, pagenum_t page_no){
-    int location = this->hashtable[{table_id, page_no}];    
+    int location = this->hashtable[{table_id, page_no}];  
+    this->frames[location].ref++;  
     return this->frames[location].page;
 }
 
