@@ -16,6 +16,7 @@ public:
 
 class bplustree : public basic_page{
 private:
+    //flag is indicating whether this node is leaf or not
     union{
         pagenum_t leftmost_child;
         pagenum_t right_sibling;
@@ -50,6 +51,23 @@ public:
     void print(int table_id);
 };
 
-basic_page* allocate_page(int index_type);
+class skiplist : public basic_page{
+private:
+    //parent_no is not used in skiplist
+    //flag is indicating level of node
+    char reserved[8];
+    Record records[23];
+    Branch prev[16];
+    Branch next[16];
 
+    pagenum_t find_node(int table_id, int64_t key, pagenum_t now, int now_lvl);
+public:
+    skiplist();
+    bool insert(int table_id, int64_t key, char* value);
+    bool erase(int table_id, int64_t key);
+    char* find(int table_id, int64_t key);
+    void print(int table_id);
+};
+
+basic_page* allocate_page(int index_type);
 #endif

@@ -4,6 +4,8 @@
 basic_page* allocate_page(int index_type){
     if(index_type == BPLUSTREE){
         return new bplustree();
+    }else if(index_type==SKIPLIST){
+        return new skiplist();
     }
     return nullptr;
 }

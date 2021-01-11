@@ -41,24 +41,30 @@ int close(int table_id){
 }
 
 bool insert(int table_id, int64_t key, char* value){
-    bool result;
+    bool result, flag = false;
     File* file = table->get_file(table_id);
     if(!file){
         return false;
     }
     pagenum_t root_no;
     if((root_no = file->get_header()->get_root_page())==0){
+        flag = true;
         file->get_header()->set_root_page(root_no = file->alloc_page());
     }
 
     buffer->pin_page(table_id, root_no);
     bplustree* root = (bplustree*)(buffer->get_page(table_id, root_no));
+    if(flag){
+        root->set_parent(0);
+        buffer->mark_dirty(table_id, root_no);
+    }
     result = root->insert(table_id, key, value);
     buffer->unpin_page(table_id, root_no);
     return result;
 }
 
 char* find(int table_id, int64_t key){
+    bool flag = false;
     char* result;
     File* file = table->get_file(table_id);
     if(!file){
@@ -66,35 +72,46 @@ char* find(int table_id, int64_t key){
     }
     pagenum_t root_no;
     if((root_no = file->get_header()->get_root_page())==0){
+        flag = true;
         file->get_header()->set_root_page(root_no = file->alloc_page());
     }
 
     buffer->pin_page(table_id, root_no);
     bplustree* root = (bplustree*)(buffer->get_page(table_id, root_no));
+    if(flag){
+        root->set_parent(0);
+        buffer->mark_dirty(table_id, root_no);
+    }
     result = root->find(table_id, key);
     buffer->unpin_page(table_id, root_no);
     return result;
 }
 
 bool erase(int table_id, int64_t key){    
-    bool result;
+    bool result, flag = false;
     File* file = table->get_file(table_id);
     if(!file){
         return false;
     }
     pagenum_t root_no;
     if((root_no = file->get_header()->get_root_page())==0){
+        flag = true;
         file->get_header()->set_root_page(root_no = file->alloc_page());
     }
 
     buffer->pin_page(table_id, root_no);
     bplustree* root = (bplustree*)(buffer->get_page(table_id, root_no));
+    if(flag){
+        root->set_parent(0);
+        buffer->mark_dirty(table_id, root_no);
+    }
     result = root->erase(table_id, key);
     buffer->unpin_page(table_id, root_no);
     return result; 
 }
 
 void print(int table_id){
+    bool flag = false;
     File* file = table->get_file(table_id);
     if(!file){
         return;
@@ -106,6 +123,10 @@ void print(int table_id){
 
     buffer->pin_page(table_id, root_no);
     bplustree* root = (bplustree*)(buffer->get_page(table_id, root_no));
+    if(flag){
+        root->set_parent(0);
+        buffer->mark_dirty(table_id, root_no);
+    }
     root->print(table_id);
     buffer->unpin_page(table_id, root_no);
 }

@@ -294,7 +294,6 @@ bool bplustree::insert(int table_id, int64_t key, char* value){
 
 //B+Tree API #3
 //DELETE
-
 int bplustree::find_idx(pagenum_t page_no){
     if(leftmost_child == page_no){
         return -1;

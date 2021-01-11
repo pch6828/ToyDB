@@ -38,10 +38,6 @@ public:
     void set_parent(pagenum_t parent);
     pagenum_t get_parent();
     void clean_page();
-    bool insert(int table_id, int64_t key, char* value);
-    bool erase(int table_id, int64_t key);
-    char* find(int table_id, int64_t key);
-    void print(int table_id);
 };
 
 class HeaderPage{
