@@ -60,11 +60,16 @@ private:
     Branch prev[16];
     Branch next[16];
 
-    pagenum_t find_node(int table_id, int64_t key, pagenum_t now, int now_lvl);
+    pagenum_t find_node(int table_id, int64_t key, pagenum_t iter, int now_lvl);
+    void add_record(Record& record);
+    pagenum_t split_node(int table_id, Record& record);
+    void insert_in_list(int table_id, pagenum_t iter, Branch& branch, int now_lvl);
+    void adjust_head(int table_id, pagenum_t now, Record& record);
 public:
     skiplist();
+    void init_node();
     bool insert(int table_id, int64_t key, char* value);
-    bool erase(int table_id, int64_t key);
+    bool erase(int table_id, int64_t key){}
     char* find(int table_id, int64_t key);
     void print(int table_id);
 };
