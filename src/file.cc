@@ -15,7 +15,7 @@ File::File(std::string filename, int index){
     this->header = new HeaderPage();
     this->read_header();
 
-    if(this->header->get_size()==0){
+    if(this->header->get_size()==1){
         delete this->header;
         this->header = new HeaderPage(index);
     }

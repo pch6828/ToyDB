@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include "api.h"
+#include "index.h"
 
 //using namespace std;
 
@@ -47,7 +48,8 @@ int main(){
         }else if(cmd=="open"){
             std::string filename;
             std::cin>>filename;
-            int table_id = open(filename, BPLUSTREE);
+            //int table_id = open(filename, BPLUSTREE);
+            int table_id = open(filename, SKIPLIST);
             std::cout<<"open result : "<<table_id<<std::endl;
             tables.push_back(table_id);
         }else if(cmd=="close"){

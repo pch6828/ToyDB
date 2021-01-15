@@ -10,7 +10,7 @@
 #include "index.h"
 
 //#define MAX_LEVEL 16
-//#define MAX_RECORD 23
+//#define MAX_RECORD 27
 //for debug
 #define MAX_LEVEL 4
 #define MAX_RECORD 4
@@ -31,6 +31,9 @@ void skiplist::init_node(){
     memset(this->next, 0, sizeof(this->next));
 }
 
+void skiplist::set_max_level(){
+    this->flag = MAX_LEVEL;
+}
 //Skip List API #1
 //FIND
 pagenum_t skiplist::find_node(int table_id, int64_t key, pagenum_t iter, int now_lvl){
@@ -201,7 +204,7 @@ bool skiplist::insert(int table_id, int64_t key, char* value){
     if(now==target_no){
         this->adjust_head(table_id, now, record);
         buffer->mark_dirty(table_id, now);
-        return;
+        return true;
     }
     buffer->pin_page(table_id, target_no);
     skiplist* target = (skiplist*)(buffer->get_page(table_id, target_no));
@@ -223,5 +226,43 @@ bool skiplist::insert(int table_id, int64_t key, char* value){
         buffer->mark_dirty(table_id, newnode_no);
         buffer->unpin_page(table_id, newnode_no);
     }
+    return true;
 }
 
+//Skip List API #4
+//PRINT
+void skiplist::dump_node(){
+    std::cout<<"level: "<<this->flag<<std::endl;
+    std::cout<<"prev : ";
+    for(int i = 0; i < this->flag; i++){
+        std::cout<<this->prev[i].get_key()<<" ";
+    }
+    std::cout<<std::endl;
+    std::cout<<"next : ";
+    for(int i = 0; i < this->flag; i++){
+        std::cout<<this->next[i].get_key()<<" ";
+    }
+    std::cout<<std::endl;
+    std::cout<<"records : ";
+    for(int i = 0; i < this->num_keys; i++){
+        std::cout<<this->records[i].get_key()<<" ";
+    }
+    std::cout<<std::endl;
+}
+
+void skiplist::print(int table_id){
+    pagenum_t nxt_no = 0;
+    skiplist* now = this;
+    while(true){
+        now->dump_node();
+        if(nxt_no){
+            buffer->unpin_page(table_id, nxt_no);
+        }
+        nxt_no = now->next[0].get_page_no();
+        if(nxt_no==0){
+            return;
+        }
+        buffer->pin_page(table_id, nxt_no);
+        now = (skiplist*)(buffer->get_page(table_id, nxt_no));
+    }
+}

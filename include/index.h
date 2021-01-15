@@ -56,7 +56,7 @@ private:
     //parent_no is not used in skiplist
     //flag is indicating level of node
     char reserved[8];
-    Record records[23];
+    Record records[27];
     Branch prev[16];
     Branch next[16];
 
@@ -65,9 +65,11 @@ private:
     pagenum_t split_node(int table_id, Record& record);
     void insert_in_list(int table_id, pagenum_t iter, Branch& branch, int now_lvl);
     void adjust_head(int table_id, pagenum_t now, Record& record);
+    void dump_node();
 public:
     skiplist();
     void init_node();
+    void set_max_level();
     bool insert(int table_id, int64_t key, char* value);
     bool erase(int table_id, int64_t key){}
     char* find(int table_id, int64_t key);
