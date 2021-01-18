@@ -94,7 +94,7 @@ bool insert(int table_id, int64_t key, char* value){
     }
 }
 
-bool erase(int table_id, int64_t key){    
+static bool bplustree_erase(int table_id, int64_t key){
     bool result, flag = false;
     File* file = table->get_file(table_id);
     if(!file){
@@ -114,7 +114,41 @@ bool erase(int table_id, int64_t key){
     }
     result = root->erase(table_id, key);
     buffer->unpin_page(table_id, root_no);
-    return result; 
+    return result;   
+}
+
+static bool skiplist_erase(int table_id, int64_t key){
+    bool result, flag = false;
+    pagenum_t head_no;
+    File* file = table->get_file(table_id);
+    if((head_no = file->get_header()->get_root_page())==0){
+        flag = true;
+        file->get_header()->set_root_page(head_no = file->alloc_page());
+    }
+
+    buffer->pin_page(table_id, head_no);
+    skiplist* head = (skiplist*)(buffer->get_page(table_id, head_no));
+    if(flag){
+        head->init_node();
+        head->set_max_level();
+        buffer->mark_dirty(table_id, head_no);
+    }
+    result = head->erase(table_id, key);
+    buffer->unpin_page(table_id, head_no);
+    return result;    
+}
+
+bool erase(int table_id, int64_t key){    
+    File* file = table->get_file(table_id);
+    if(!file){
+        return false;
+    }
+    int type = file->get_header()->get_type();
+    if(type == BPLUSTREE){
+        return bplustree_erase(table_id, key);
+    }else if(type == SKIPLIST){
+        return skiplist_erase(table_id, key);
+    }
 }
 
 static char* bplustree_find(int table_id, int64_t key){

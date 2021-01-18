@@ -229,6 +229,94 @@ bool skiplist::insert(int table_id, int64_t key, char* value){
     return true;
 }
 
+//Skip List API #3
+//DELETE
+void skiplist::remove_record(int64_t key){
+    bool found = false;
+    for(int i = 0; i < this->num_keys; i++){
+        if(found){
+            records[i-1] = records[i];
+        }
+        if(records[i].get_key() == key){
+            found = true;
+        }
+    }  
+    this->num_keys--;
+}
+
+void skiplist::reconnect_list(int table_id){
+    for(int i = 0; i < flag; i++){
+        pagenum_t pred_no = prev[i].get_page_no();
+        pagenum_t succ_no = next[i].get_page_no();
+        if(pred_no){
+            buffer->pin_page(table_id, pred_no);
+            skiplist* pred = (skiplist*)(buffer->get_page(table_id, pred_no));
+            pred->next[i] = this->next[i];
+            buffer->mark_dirty(table_id, pred_no);
+            buffer->unpin_page(table_id, pred_no);
+        }
+        if(succ_no){
+            buffer->pin_page(table_id, succ_no);
+            skiplist* succ = (skiplist*)(buffer->get_page(table_id, succ_no));
+            succ->prev[i] = this->prev[i];
+            buffer->mark_dirty(table_id, succ_no);
+            buffer->unpin_page(table_id, succ_no);
+        }
+    }
+}
+
+void skiplist::reset_head(int table_id){
+    pagenum_t newhead_no = next[0].get_page_no();
+    if(newhead_no){
+        buffer->pin_page(table_id, newhead_no);
+        skiplist* newhead = (skiplist*)(buffer->get_page(table_id, newhead_no));
+        int64_t key = next[0].get_key();
+        Branch branch;
+        branch.set_key(key);
+        branch.set_page_no(newhead_no);
+        for(int i = newhead->flag; i < MAX_LEVEL; i++){
+            newhead->next[i] = next[i];
+            pagenum_t temp_no = next[i].get_page_no();
+            if(temp_no){
+                buffer->pin_page(table_id, temp_no);
+                skiplist* temp = (skiplist*)(buffer->get_page(table_id, temp_no));
+                temp->prev[i] = branch;
+                buffer->mark_dirty(table_id, temp_no);
+                buffer->unpin_page(table_id, temp_no);
+            }
+        }
+        newhead->set_max_level();
+        buffer->mark_dirty(table_id, newhead_no);
+        buffer->unpin_page(table_id, newhead_no);
+    }
+    table->get_file(table_id)->get_header()->set_root_page(newhead_no);
+}
+
+bool skiplist::erase(int table_id, int64_t key){
+    pagenum_t now = table->get_file(table_id)->get_header()->get_root_page();
+    pagenum_t target_no = this->find_node(table_id, key, now, flag);
+    pagenum_t newnode_no = 0;
+    char* temp;
+    if((temp = this->find(table_id, key))==nullptr){
+        return false;
+    }
+    delete temp;
+    buffer->pin_page(table_id, target_no);
+    skiplist* target = (skiplist*)(buffer->get_page(table_id, target_no)); 
+    target->remove_record(key);
+    if(target->num_keys==0){
+        if(target_no==now){
+            target->reset_head(table_id);
+        }else{
+            target->reconnect_list(table_id);
+        }
+        buffer->free_page(table_id, target_no);
+    }
+    buffer->mark_dirty(table_id, target_no);
+    buffer->unpin_page(table_id, target_no);
+    return true;
+}
+
 //Skip List API #4
 //PRINT
 void skiplist::dump_node(){
