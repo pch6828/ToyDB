@@ -18,14 +18,14 @@
 std::random_device rd;
 
 skiplist::skiplist(){
-    this->flag = rd() % MAX_LEVEL;
+    this->flag = rd() % MAX_LEVEL + 1;
     this->num_keys = 0;
     memset(this->prev, 0, sizeof(this->prev));
     memset(this->next, 0, sizeof(this->next));
 }
 
 void skiplist::init_node(){
-    this->flag = rd() % MAX_LEVEL;
+    this->flag = rd() % MAX_LEVEL + 1;
     this->num_keys = 0;
     memset(this->prev, 0, sizeof(this->prev));
     memset(this->next, 0, sizeof(this->next));
