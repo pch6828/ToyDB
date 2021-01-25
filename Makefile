@@ -14,7 +14,7 @@ TARGET_SRC:=$(SRCDIR)main.cc
 TARGET_OBJ:=$(SRCDIR)main.o
 
 # Include more files if you write another source file.
-SRCS_FOR_LIB:=$(SRCDIR)global.cc $(SRCDIR)file.cc $(SRCDIR)table.cc $(SRCDIR)buffer.cc $(SRCDIR)index.cc $(SRCDIR)bplustree.cc $(SRCDIR)skiplist.cc $(SRCDIR)api.cc
+SRCS_FOR_LIB:=$(SRCDIR)global.cc $(SRCDIR)file.cc $(SRCDIR)table.cc $(SRCDIR)buffer.cc $(SRCDIR)index.cc $(SRCDIR)bplustree.cc $(SRCDIR)skiplist.cc $(SRCDIR)bplustree_iterator.cc $(SRCDIR)api.cc
 OBJS_FOR_LIB:=$(SRCS_FOR_LIB:.cc=.o)
 
 CFLAGS+= -g -std=c++14 -fPIC -I $(INC)

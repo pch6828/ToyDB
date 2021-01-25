@@ -49,6 +49,8 @@ public:
     bool erase(int table_id, int64_t key);
     char* find(int table_id, int64_t key);
     void print(int table_id);
+
+    friend class bplustree_iterator;
 };
 
 class skiplist : public basic_page{
@@ -79,6 +81,8 @@ public:
     bool erase(int table_id, int64_t key);
     char* find(int table_id, int64_t key);
     void print(int table_id);
+    
+    friend class skiplist_iterator;
 };
 
 basic_page* allocate_page(int index_type);
