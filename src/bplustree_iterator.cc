@@ -61,6 +61,10 @@ void bplustree_iterator::set_iter_from(int64_t key){
             break;
         }
     }
+    if(idx==target->num_keys){
+        idx = 0;
+        page_no = target->right_sibling;
+    }
     buffer->unpin_page(table_id, target_no);
 }
 
