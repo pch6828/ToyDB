@@ -19,7 +19,7 @@ OBJS_FOR_LIB:=$(SRCS_FOR_LIB:.cc=.o)
 
 CFLAGS+= -g -std=c++14 -fPIC -I $(INC)
 
-TARGET=main
+TARGET=toydb
 
 all: $(TARGET)
 

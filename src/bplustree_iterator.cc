@@ -45,26 +45,6 @@ void bplustree_iterator::set_iter_begin(){
     }
 }
 
-void bplustree_iterator::set_iter_end(){
-    bplustree* page;
-    page_no = table->get_file(table_id)->get_header()->get_root_page();
-    while(true){
-        pagenum_t temp_no = 0;
-        int temp_idx = 0;
-        buffer->pin_page(table_id, page_no);
-        page = (bplustree*)(buffer->get_page(table_id, page_no));
-        idx = page->num_keys;
-        if(page->flag==0){
-            temp_no = page->child[page->num_keys-1].get_page_no();
-        }
-        buffer->unpin_page(table_id, page_no);
-        if(!temp_no){
-            break;
-        }
-        page_no = temp_no;
-    }
-}
-
 void bplustree_iterator::set_iter_from(int64_t key){
     pagenum_t root_no = table->get_file(table_id)->get_header()->get_root_page();
     buffer->pin_page(table_id, root_no);

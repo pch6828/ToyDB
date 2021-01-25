@@ -12,7 +12,6 @@ protected:
 public:
     virtual ~iterator(){};
     virtual void set_iter_begin() = 0;
-    virtual void set_iter_end() = 0;
     virtual void set_iter_from(int64_t key) = 0;
     virtual Record* next() = 0;
 };
@@ -22,7 +21,6 @@ public:
     bplustree_iterator(int table_id);
     virtual ~bplustree_iterator(){};
     virtual void set_iter_begin();
-    virtual void set_iter_end();
     virtual void set_iter_from(int64_t key);
     virtual Record* next();
 };
@@ -32,7 +30,6 @@ public:
     skiplist_iterator(int table_id);
     virtual ~skiplist_iterator(){};
     virtual void set_iter_begin();
-    virtual void set_iter_end();
     virtual void set_iter_from(int64_t key);
     virtual Record* next();
 };
