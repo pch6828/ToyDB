@@ -4,23 +4,46 @@
 #include <cstdint>
 #include "api.h"
 #include "index.h"
-#include "iterator.h"
 
 //using namespace std;
 
 int main(){
+    int buffer_size;
     std::string cmd;
-    init_db(1000);
-    std::vector<iterator*>iter;
-    iter.push_back(nullptr);
+    std::vector<int>tables;
+    std::cout<<"input buffer_size (positive integer) > ";
+    std::cin>>buffer_size;
+    init_db(buffer_size);
+
     while(true){
         std::cin>>cmd;
-        if(cmd=="open"){
-            std::string filename;
-            std::cin>>filename;
-            int table_id = open(filename, SKIPLIST);
-            iter.push_back(new skiplist_iterator(table_id));
+        if(cmd=="insert"){
+            int table_id;
+            int64_t key;
+            char value[120];
+            std::cin>>table_id>>key>>value;
+            std::cout<<"insert result : "<<insert(table_id, key, value)<<std::endl;
+        }else if(cmd=="find"){
+            int table_id;
+            int64_t key;
+            std::cin>>table_id>>key;
+            std::cout<<"search result : "<<find(table_id, key)<<std::endl;
+        }else if(cmd=="delete"){
+            int table_id;
+            int64_t key;
+            std::cin>>table_id>>key;
+            std::cout<<"delete result : "<<erase(table_id, key)<<std::endl;
+        }else if(cmd=="print"){
+            int table_id;
+            std::cin>>table_id;
+            print(table_id);
+            std::cout<<std::endl;
+        }else if(cmd=="open"){
+            std::string filename, mode;
+            std::cin>>filename>>mode;
+            int table_id = open(filename, mode=="BPLUSTREE"?BPLUSTREE:SKIPLIST);
             std::cout<<"open result : "<<table_id<<std::endl;
+            tables.push_back(table_id);
         }else if(cmd=="close"){
             int table_id;
             std::cin>>table_id;
@@ -29,25 +52,6 @@ int main(){
             end_db();
             std::cout<<"bye!"<<std::endl;
             return 0;
-        }else if(cmd=="begin"){
-            int table_id;
-            std::cin>>table_id;
-            iter[table_id]->set_iter_begin();
-        }else if(cmd=="from"){
-            int table_id;
-            std::cin>>table_id;
-            int64_t key;
-            std::cin>>key;
-            iter[table_id]->set_iter_from(key);
-        }else if(cmd=="next"){
-            int table_id;
-            std::cin>>table_id;
-            Record* result = iter[table_id]->next();
-            if(result){
-                std::cout<<result->get_key()<<std::endl;
-            }else{
-                std::cout<<"null"<<std::endl;
-            }            
         }
     }
 }

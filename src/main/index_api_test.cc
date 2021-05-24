@@ -39,10 +39,9 @@ int main(){
             print(table_id);
             std::cout<<std::endl;
         }else if(cmd=="open"){
-            std::string filename;
-            std::cin>>filename;
-            //int table_id = open(filename, BPLUSTREE);
-            int table_id = open(filename, SKIPLIST);
+            std::string filename, mode;
+            std::cin>>filename>>mode;
+            int table_id = open(filename, mode=="BPLUSTREE"?BPLUSTREE:SKIPLIST);
             std::cout<<"open result : "<<table_id<<std::endl;
             tables.push_back(table_id);
         }else if(cmd=="close"){
